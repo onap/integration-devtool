@@ -97,6 +97,16 @@ nodes = [
     :args   => ["dcae"],
   },
   {
+    :name   => "dmaap",
+    :ips    => ['10.252.0.22', "192.168.50.22"],
+    :macs   => [],
+    :cpus   => 2,
+    :cpu    => "50",
+    :ram    => 4 * 1024,
+    :groups => ["individual"],
+    :args   => ["dmaap"],
+  },
+  {
     :name   => "dns",
     :ips    => ['10.252.0.3', "192.168.50.3"],
     :macs   => [],

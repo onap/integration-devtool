@@ -1,3 +1,8 @@
 .tox/
 doc/build/
 .vagrant/
+*.swp
+etc/settings.yaml
+opt/*
+tests/installed-software*
+tests/remaining_projects.txt

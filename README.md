@@ -46,6 +46,7 @@ current options include:
 | appc       | Application Controller              |
 | ccsdk      | Common Controller SDK               |
 | dcae       | Data Collection Analytics & Events  |
+| dmaap      | Data Movement as a Platform         |
 | mr         | Message Router                      |
 | mso        | Master Service Orchestrator         |
 | msb        | Microservices Bus Project           |

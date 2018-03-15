@@ -9,6 +9,7 @@ src_folders=(
 ["appc"]="$git_src_folder/appc"
 ["ccsdk"]="$git_src_folder/ccsdk"
 ["dcae"]="$git_src_folder/dcae"
+["dmaap"]="$git_src_folder/dmaap"
 ["mr"]="$git_src_folder/dcae/message-router"
 ["msb"]="$git_src_folder/msb"
 ["mso"]="$git_src_folder/mso"
@@ -46,6 +47,10 @@ dcae/demo/startup dcae/demo/startup/aaf dcae/demo/startup/controller \
 dcae/demo/startup/message-router dcae/dmaapbc dcae/operation \
 dcae/operation/utils dcae/orch-dispatcher dcae/pgaas dcae/utils \
 dcae/utils/buildtools"
+["dmaap"]="dmaap dmaap/buscontroller dmaap/datarouter dmaap/dbcapi \
+dmaap/messagerouter dmaap/messagerouter/dmaapclient \
+dmaap/messagerouter/messageservice dmaap/messagerouter/mirroragent \
+dmaap/messagerouter/msgrtr"
 ["msb"]="msb/apigateway msb/discovery msb/java-sdk msb/swagger-sdk"
 ["mso"]="mso mso/chef-repo mso/docker-config mso/libs mso/mso-config"
 ["multicloud"]="multicloud multicloud/framework multicloud/openstack \
