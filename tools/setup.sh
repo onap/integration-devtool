@@ -40,6 +40,7 @@ case $provider in
 esac
 source /etc/os-release || source /usr/lib/os-release
 
+declare -r libvirt_group="libvirt"
 packages=()
 case ${ID,,} in
     *suse)
@@ -74,6 +75,7 @@ case ${ID,,} in
     ;;
 
     ubuntu|debian)
+    libvirt_group="libvirtd"
     INSTALLER_CMD="sudo -H -E apt-get -y -q=3 install"
 
     # Vagrant installation
@@ -129,5 +131,5 @@ esac
 ${INSTALLER_CMD} ${packages[@]}
 if [ $VAGRANT_DEFAULT_PROVIDER == libvirt ]; then
     vagrant plugin install vagrant-libvirt
-    sudo usermod -a -G libvirt $USER
+    sudo usermod -a -G $libvirt_group $USER
 fi
