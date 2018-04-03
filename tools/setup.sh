@@ -8,7 +8,7 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-vagrant_version=2.0.2
+vagrant_version=2.0.3
 
 function usage {
     cat <<EOF
