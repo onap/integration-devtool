@@ -1,8 +1,6 @@
 # -*- mode: ruby -*-
 # vi: set ft=ruby :
 
-Vagrant::DEFAULT_SERVER_URL.replace('https://vagrantcloud.com')
-
 configuration = {
   # Generic parameters used across all ONAP components
   'key_name'            => 'ecomp_key',
@@ -297,7 +295,6 @@ nodes = [
 ]
 
 run_path   = 'vagrant_utils/postinstall.sh'
-sdc_volume = 'vol1-sdc-data.vdi'
 
 Vagrant.require_version ">= 1.8.6"
 
