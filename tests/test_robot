@@ -29,7 +29,7 @@ function test_compile_robot_repos {
 function test_get_robot_images {
     get_robot_images
 
-    asserts_image $nexus_docker_repo/openecomp/testsuite
+    asserts_image $nexus_docker_repo/onap/testsuite
 }
 
 # test_install_robot() - Verify the built and start of Robot services
@@ -38,7 +38,7 @@ function test_install_robot {
     get_robot_images
     install_robot
 
-    asserts_image_running $nexus_docker_repo/openecomp/testsuite
+    asserts_image_running $nexus_docker_repo/onap/testsuite
 }
 
 if [ "$1" != '*' ]; then
