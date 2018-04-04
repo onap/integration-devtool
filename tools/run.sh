@@ -15,7 +15,7 @@ Optional arguments:
     -c <case>
         Test case to use in testing mode.
 Commands:
-    all_in_one  Deploy in all-in-one mode.
+    all-in-one  Deploy in all-in-one mode.
     dns|mr|sdc|aai|mso|robot|vid|sdnc|portal|dcae|policy|appc|vfc|vnfsdk|multicloud|ccsdk|vvp|openstack|msb|oom|dmaap  Deploy chosen service.
     testing  Deploy in testing mode.
 EOF
@@ -62,7 +62,7 @@ while getopts "ygis:c:" OPTION "${@:2}"; do
 done
 
 case $COMMAND in
-    "all_in_one" )
+    "all-in-one" )
         export DEPLOY_MODE='all-in-one'
         ;;
     "dns" | "mr" | "sdc" | "aai" | "mso" | "robot" | "vid" | "sdnc" | "portal" | "dcae" | "policy" | "appc" | "vfc" | "vnfsdk"| "multicloud" | "ccsdk" | "vvp" | "openstack" | "msb" | "oom" | "dmaap" )
