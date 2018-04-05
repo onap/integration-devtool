@@ -1,7 +1,8 @@
 .tox/
-doc/build/
+docs/build/
 .vagrant/
 *.swp
+.DS_Store
 etc/settings.yaml
 opt/*
 tests/installed-software*
