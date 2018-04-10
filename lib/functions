@@ -1,9 +1,10 @@
 #!/bin/bash
 
-source /var/onap/commons
+source /var/onap/_commons
 source /var/onap/config/env-vars
 source /var/onap/_composed_functions
 source /var/onap/_onap_functions
+source /var/onap/_installers
 
 export MTU=$(/sbin/ifconfig | grep MTU | sed 's/.*MTU://' | sed 's/ .*//' |sort -n | head -1)
 export NIC=$(ip route get 8.8.8.8 | awk '{ print $5; exit }')
@@ -73,174 +74,6 @@ function clone_repos {
     done
 }
 
-# _install_bind() - Install bind utils
-function _install_bind {
-    install_packages bind9 bind9utils
-}
-
-# install_java() - Install java binaries
-function install_java {
-    if is_package_installed openjdk-8-jdk; then
-        return
-    fi
-    source /etc/os-release || source /usr/lib/os-release
-    case ${ID,,} in
-        *suse)
-        ;;
-        ubuntu|debian)
-            install_package software-properties-common
-            add-apt-repository -y ppa:openjdk-r/ppa
-        ;;
-        rhel|centos|fedora)
-        ;;
-    esac
-    update_repos
-
-    # Remove Java 7
-    uninstall_packages default-jre openjdk-7-jdk openjdk-7-jre openjdk-7-jre-headless
-
-    install_package openjdk-8-jdk
-    # ca-certificates-java is not a dependency in the Oracle JDK/JRE so this must be explicitly installed.
-    /var/lib/dpkg/info/ca-certificates-java.postinst configure
-}
-
-# install_maven() - Install maven binaries
-function install_maven {
-    if is_package_installed maven3; then
-        return
-    fi
-    install_java
-    source /etc/os-release || source /usr/lib/os-release
-    case ${ID,,} in
-        *suse)
-        ;;
-        ubuntu|debian)
-            install_package software-properties-common
-            add-apt-repository -y ppa:andrei-pozolotin/maven3
-        ;;
-        rhel|centos|fedora)
-        ;;
-    esac
-    update_repos
-    install_package maven3
-
-    # Remove Java 7
-    uninstall_package openjdk-7-jdk
-
-    _configure_maven
-}
-
-# _configure_docker_settings() - Configures Docker settings
-function _configure_docker_settings {
-    local docker_conf_backup=/tmp/docker.backup
-    local docker_conf=/etc/default/docker
-    local chameleonsocks_filename=chameleonsocks.sh
-    local max_concurrent_downloads=${1:-3}
-
-    cp ${docker_conf} ${docker_conf_backup}
-    if [ $http_proxy ]; then
-        echo "export http_proxy=$http_proxy" >> $docker_conf
-    fi
-    if [ $https_proxy ]; then
-        echo "export https_proxy=$https_proxy" >> $docker_conf
-        #If you have a socks proxy, then use that to connect to the nexus repo
-        #via a redsocks container
-        if [ $socks_proxy ]; then
-            wget https://raw.githubusercontent.com/crops/chameleonsocks/master/$chameleonsocks_filename
-            chmod 755 $chameleonsocks_filename
-            socks=$(echo $socks_proxy | sed -e "s/^.*\///" | sed -e "s/:.*$//")
-            port=$(echo $socks_proxy | sed -e "s/^.*://")
-            PROXY=$socks PORT=$port ./$chameleonsocks_filename --install
-            rm $chameleonsocks_filename
-            cp ${docker_conf_backup} ${docker_conf}
-        fi
-    fi
-    rm ${docker_conf_backup}
-
-    echo "DOCKER_OPTS=\"-H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock --max-concurrent-downloads $max_concurrent_downloads \"" >> $docker_conf
-    usermod -aG docker $USER
-
-    source /etc/os-release || source /usr/lib/os-release
-    case ${ID,,} in
-        *suse)
-        ;;
-        ubuntu|debian)
-            service docker restart
-            sleep 10
-        ;;
-        rhel|centos|fedora)
-        ;;
-    esac
-}
-
-# install_nodejs() - Download and install NodeJS
-function install_nodejs {
-    if is_package_installed nodejs; then
-        return
-    fi
-    curl -sL https://deb.nodesource.com/setup_6.x | sudo -E bash -
-    install_package nodejs
-
-    # Update NPM to latest version
-    npm install npm -g
-}
-
-# install_python() - Install Python 2.7 and other tools necessary for development.
-function install_python {
-    install_packages python2.7 python-dev
-}
-
-# _install_pip() - Install Python Package Manager
-function _install_pip {
-    install_python
-    if ! which pip; then
-        curl -sL https://bootstrap.pypa.io/get-pip.py | python
-    fi
-}
-
-# install_python_package() - Install python modules
-function install_python_package {
-    local python_packages=$@
-
-    _install_pip
-    pip install $python_packages
-}
-
-# install_python_requirements() - Install a list of python modules defined in requirement.txt file
-function install_python_requirements {
-    local python_project_path=$1
-
-    _install_pip
-    pushd $python_project_path
-    pip install -r requirements.txt
-    popd
-}
-
-# install_docker() - Download and install docker-engine
-function install_docker {
-    if $(docker version &>/dev/null); then
-        return
-    fi
-    source /etc/os-release || source /usr/lib/os-release
-    case ${ID,,} in
-        *suse)
-        ;;
-        ubuntu|debian)
-            install_packages software-properties-common linux-image-extra-$(uname -r) linux-image-extra-virtual apt-transport-https ca-certificates curl
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-            add-apt-repository \
-            "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
-            $(lsb_release -cs) stable"
-        ;;
-        rhel|centos|fedora)
-        ;;
-    esac
-    update_repos
-
-    install_package docker-ce
-    _configure_docker_settings
-}
-
 # pull_docker_image() - Pull Docker container image from the Public Docker Registry Hub
 function pull_docker_image {
     install_docker
@@ -281,54 +114,6 @@ function run_docker_compose {
     pushd $folder
     /opt/docker/docker-compose up -d
     popd
-}
-
-# install_docker_compose() - Download and install docker-engine 
-function install_docker_compose {
-    local docker_compose_version=${1:-1.12.0}
-    if [ ! -d /opt/docker ]; then
-        mkdir /opt/docker
-        curl -L https://github.com/docker/compose/releases/download/$docker_compose_version/docker-compose-`uname -s`-`uname -m` > /opt/docker/docker-compose
-        chmod +x /opt/docker/docker-compose
-    fi
-}
-
-# install_chefdk() - Install ChefDK package
-function install_chefdk {
-    local chefdk_version="2.4.17"
-
-    if is_package_installed chefdk; then
-        return
-    fi
-    pushd $(mktemp -d)
-    source /etc/os-release || source /usr/lib/os-release
-    case ${ID,,} in
-        *suse)
-        ;;
-        ubuntu|debian)
-        chefdk_pkg="chefdk_$chefdk_version-1_amd64.deb"
-        chefdk_url="https://packages.chef.io/files/stable/chefdk/$chefdk_version/ubuntu/$VERSION_ID/$chefdk_pkg"
-
-        wget $chefdk_url
-        dpkg -i $chefdk_pkg
-        apt-get install -f -y
-        ;;
-        rhel|centos|fedora)
-        rpm -Uvh "https://packages.chef.io/files/stable/chefdk/$chefdk_version/el/7/chefdk-$chefdk_version-1.el7.x86_64.rpm"
-        ;;
-    esac
-    popd
-}
-
-# _install_ODL() - Download and Install OpenDayLight SDN controller
-function _install_ODL {
-    if [ ! -d /opt/opendaylight/current ]; then
-        mkdir -p /opt/opendaylight/
-        wget "https://nexus.opendaylight.org/content/repositories/public/org/opendaylight/integration/distribution-karaf/"$odl_version"/distribution-karaf-"$odl_version".tar.gz" -P /opt/
-        tar xvf "/opt/distribution-karaf-"$odl_version".tar.gz" -C /tmp/
-        mv "/tmp/distribution-karaf-"$odl_version /opt/opendaylight/current
-        rm -rf "/opt/distribution-karaf-"$odl_version".tar.gz"
-    fi
 }
 
 # start_ODL() - Start OpenDayLight SDN controller
