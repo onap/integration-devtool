@@ -34,9 +34,10 @@ function pull_openecomp_image {
 # pull_onap_image() - Pull Docker container image from a Docker Registry Hub
 function pull_onap_image {
     local image=$1
-    local tag=$2
+    local version=${2:-$docker_version}
+    local tag=$3
     docker_openecomp_login
-    pull_docker_image ${nexus_docker_repo:-nexus3.onap.org:10001}/onap/${image}:${docker_version:-latest} $tag
+    pull_docker_image ${nexus_docker_repo:-nexus3.onap.org:10001}/onap/${image}:${version} $tag
     docker logout
 }
 

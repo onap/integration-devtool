@@ -173,7 +173,7 @@ function install_docker {
 
 # install_docker_compose() - Download and install docker-engine 
 function install_docker_compose {
-    local docker_compose_version=${1:-1.12.0}
+    local docker_compose_version=${1:-1.21.0}
     if [ ! -d /opt/docker ]; then
         mkdir /opt/docker
         curl -L https://github.com/docker/compose/releases/download/$docker_compose_version/docker-compose-`uname -s`-`uname -m` > /opt/docker/docker-compose
@@ -217,4 +217,83 @@ function _install_ODL {
         mv "/tmp/distribution-karaf-"$odl_version /opt/opendaylight/current
         rm -rf "/opt/distribution-karaf-"$odl_version".tar.gz"
     fi
+}
+
+# install_go() - Install GoLang package
+function install_go {
+    if is_package_installed golang-go; then
+        return
+    fi
+    source /etc/os-release || source /usr/lib/os-release
+    case ${ID,,} in
+        *suse)
+        ;;
+        ubuntu|debian)
+            install_package software-properties-common
+            add-apt-repository -y ppa:gophers/archive
+        ;;
+        rhel|centos|fedora)
+        ;;
+    esac
+    update_repos
+
+    install_package golang-go
+}
+
+# install_dep() - Install dep GoLand tool
+function install_dep {
+    install_go
+    curl https://raw.githubusercontent.com/golang/dep/master/install.sh | sh
+}
+
+# install_hadoop() - Function that installs Hadoop
+function install_hadoop {
+    local release=titan
+    local version=1.0.0
+    local filename=$release-$version-hadoop1
+    local dest_folder=/opt/hadoop/current
+
+    if [ ! -d $dest_folder ]; then
+        curl http://s3.thinkaurelius.com/downloads/$release/$filename.zip -o /tmp/${filename}.zip
+        install_package unzip
+        mkdir -p $dest_folder
+        unzip /tmp/${filename}.zip -d $dest_folder
+    fi
+
+    pushd $dest_folder/${filename}
+    # Change commitlog_directory and data_file_directories values (https://stackoverflow.com/a/26856246/1707651)
+    sed -i "s|db/cassandra/data|/tmp/data|g" conf/cassandra/cassandra.yaml
+    sed -i "s|db/cassandra/commitlog|/tmp/commitlog|g" conf/cassandra/cassandra.yaml
+
+    install_java
+    ./bin/titan.sh start
+    popd
+}
+
+# install_haproxy() - Function that install HAProxy
+function install_haproxy {
+    if is_package_installed haproxy; then
+        return
+    fi
+    source /etc/os-release || source /usr/lib/os-release
+    case ${ID,,} in
+        *suse)
+        ;;
+        ubuntu|debian)
+            install_package software-properties-common
+            add-apt-repository -y ppa:vbernat/haproxy-1.7
+            update_repos
+            install_package haproxy
+            cp /var/onap/files/haproxy.cfg /etc/haproxy/
+            cp /var/onap/files/aai.pem /etc/ssl/private/
+            chmod 640 /etc/ssl/private/aai.pem
+            chown root:ssl-cert /etc/ssl/private/aai.pem
+            mkdir -p /usr/local/etc/haproxy
+            #echo "127.0.0.1 localhost aai-traversal.api.simpledemo.openecomp.org aai-resources.api.simpledemo.openecomp.org" >> /etc/hosts
+
+            service haproxy restart
+        ;;
+        rhel|centos|fedora)
+        ;;
+    esac
 }

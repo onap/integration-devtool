@@ -21,7 +21,7 @@ function get_policy_images {
         _build_policy_images
     else
         for image in db pe drools nexus; do
-            pull_onap_image policy/policy-$image onap/policy/policy-$image:latest
+            pull_onap_image policy/policy-$image latest onap/policy/policy-$image:latest
         done
     fi
 }

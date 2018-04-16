@@ -2,50 +2,6 @@
 
 source /var/onap/functions
 
-hbase_version=1.2.0
-
-# install_hadoop() - Function that installs Hadoop
-function install_hadoop {
-    local release=titan
-    local version=1.0.0
-    local filename=$release-$version-hadoop1
-    local dest_folder=/opt/hadoop/current
-
-    if [ ! -d $dest_folder ]; then
-        curl http://s3.thinkaurelius.com/downloads/$release/$filename.zip -o /tmp/${filename}.zip
-        install_package unzip
-        mkdir -p $dest_folder
-        unzip /tmp/${filename}.zip -d $dest_folder
-    fi
-
-    pushd $dest_folder/${filename}
-    # Change commitlog_directory and data_file_directories values (https://stackoverflow.com/a/26856246/1707651)
-    sed -i "s|db/cassandra/data|/tmp/data|g" conf/cassandra/cassandra.yaml
-    sed -i "s|db/cassandra/commitlog|/tmp/commitlog|g" conf/cassandra/cassandra.yaml
-
-    install_java
-    ./bin/titan.sh start
-    popd
-}
-
-# install_haproxy() - Function that install HAProxy
-function install_haproxy {
-    if is_package_installed haproxy; then
-        return
-    fi
-    install_package software-properties-common
-    add-apt-repository -y ppa:vbernat/haproxy-1.7
-    update_repos
-    install_package haproxy
-    cp /var/onap/files/haproxy.cfg /etc/haproxy/
-    cp /var/onap/files/aai.pem /etc/ssl/private/
-    chmod 640 /etc/ssl/private/aai.pem
-    chown root:ssl-cert /etc/ssl/private/aai.pem
-    mkdir -p /usr/local/etc/haproxy
-    #echo "127.0.0.1 localhost aai-traversal.api.simpledemo.openecomp.org aai-resources.api.simpledemo.openecomp.org" >> /etc/hosts
-
-    service haproxy restart
-}
 
 # compile_aai_repos() - Function that compiles AAI source repo.
 function compile_aai_repos {
@@ -109,39 +65,56 @@ function install_aai {
 
 # get_aai_images() - Function that pulls or creates AAI docker images
 function get_aai_images {
-    pull_docker_image elasticsearch:2.4.1
+    local aai_docker_version="1.2-STAGING-latest"
+    local cassandra_version=2.1
+    local elasticsearch_version=2.4.1
+    local hbase_version=1.2.0
+
+    pull_docker_image cassandra:${cassandra_version} &
+    pull_docker_image elasticsearch:${elasticsearch_version} &
     docker_openecomp_login
-    pull_docker_image ${nexus_docker_repo:-nexus3.onap.org:10001}/aaionap/hbase:${hbase_version}
+    pull_docker_image ${nexus_docker_repo:-nexus3.onap.org:10001}/aaionap/hbase:${hbase_version} &
+    wait_docker_pull
 
     if [[ "$build_image" == "True" ]]; then
         unset MAVEN_OPTS
-        for project in resources/aai-resources traversal/aai-traversal search-data-service data-router model-loader sparky-be; do
+        if [[ "$compile_repo" != "True" ]]; then
+            compile_aai_repos
+        fi
+        for project in resources/aai-resources traversal/aai-traversal; do
+            build_docker_image ${src_folders[aai]}/$project docker
+        done
+        for project in search-data-service data-router model-loader sparky-be/sparkybe-onap-application; do
             build_docker_image ${src_folders[aai]}/$project
+        done
+        for image in aai-resources aai-traversal search-data-service data-router model-loader sparky-be; do
+            docker tag onap/$image ${nexus_docker_repo:-nexus3.onap.org:10001}/onap/$image $aai_docker_version
         done
     else
         for image in aai-resources aai-traversal search-data-service data-router model-loader sparky-be; do
-            pull_onap_image $image
+            pull_onap_image $image $aai_docker_version &
         done
+        wait_docker_pull
     fi
 }
 
 # init_aai() - Function that initialize AAI services
 function init_aai {
-    install_hadoop
-    install_haproxy
-
     if [[ "$clone_repo" == "True" ]]; then
         clone_repos "aai"
+        if [[ "$compile_repo" == "True" ]]; then
+            compile_aai_repos
+        fi
     fi
-    compile_aai_repos
-
-    setup_titan
-    #start_aai_microservices
 
     if [[ "$skip_get_images" == "False" ]]; then
         get_aai_images
-    fi
-    if [[ "$skip_install" == "False" ]]; then
-        install_aai
+        if [[ "$skip_install" == "False" ]]; then
+            install_hadoop
+            install_haproxy
+            setup_titan
+            #start_aai_microservices
+            install_aai
+        fi
     fi
 }
