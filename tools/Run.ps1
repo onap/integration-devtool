@@ -31,7 +31,7 @@ https://wiki.onap.org/display/DW/ONAP+on+Vagrant
 #>
 
 Param(
-    [ValidateSet("all-in-one","dns", "mr", "sdc", "aai", "mso", "robot", "vid", "sdnc", "portal", "dcae", "policy", "appc", "vfc", "multicloud", "ccsdk", "vnfsdk", "vvp", "openstack", "msb", "oom", "dmaap", "testing")]
+    [ValidateSet("all-in-one","dns", "mr", "sdc", "aai", "mso", "robot", "vid", "sdnc", "portal", "dcae", "policy", "appc", "vfc", "multicloud", "ccsdk", "vnfsdk", "vvp", "openstack", "msb", "oom", "dmaap", "integration", "testing")]
 
     [Parameter(Mandatory=$True,Position=0)]
     [ValidateNotNullOrEmpty()]
@@ -86,7 +86,7 @@ $env:SKIP_INSTALL=$skip_install
 switch ($Command)
     {
         "all-in-one" { $env:DEPLOY_MODE="all-in-one" }
-        { @("dns", "mr", "sdc", "aai", "mso", "robot", "vid", "sdnc", "portal", "dcae", "policy", "appc", "vfc", "multicloud", "ccsdk", "vnfsdk", "vvp", "openstack", "msb", "oom", "dmaap") -contains $_ } { $env:DEPLOY_MODE="individual" }
+        { @("dns", "mr", "sdc", "aai", "mso", "robot", "vid", "sdnc", "portal", "dcae", "policy", "appc", "vfc", "multicloud", "ccsdk", "vnfsdk", "vvp", "openstack", "msb", "oom", "dmaap", "integration") -contains $_ } { $env:DEPLOY_MODE="individual" }
         "testing"
             {
                 $env:DEPLOY_MODE="testing"
@@ -111,7 +111,7 @@ switch ($Command)
              }
          default
              {
-                Write-Output $"Usage: $0 {all-in-one|dns|mr|sdc|aai|mso|robot|vid|sdnc|portal|dcae|policy|appc|vfc|multicloud|ccsdk|vnfsdk|vvp|dmaap|testing}"
+                Write-Output $"Usage: $0 {all-in-one|dns|mr|sdc|aai|mso|robot|vid|sdnc|portal|dcae|policy|appc|vfc|multicloud|ccsdk|vnfsdk|vvp|dmaap|integration|testing}"
                 exit 1
              }
     }

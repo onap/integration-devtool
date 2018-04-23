@@ -113,7 +113,17 @@ nodes = [
     :ram    => 1 * 1024,
     :groups => ["individual"],
     :flavor => 'm1.small',
-    :args   => [" "]
+  },
+  {
+    :name   => "integration",
+    :ips    => ['10.252.0.23', "192.168.50.23"],
+    :macs   => [],
+    :cpus   => 2,
+    :cpu    => "50",
+    :ram    => 4 * 1024,
+    :groups => ["individual"],
+    :flavor => 'm1.small',
+    :args   => ["integration"]
   },
   {
     :name   => "message-router",
@@ -237,7 +247,6 @@ nodes = [
     :ram    => 4 * 1024,
     :groups => ["testing"],
     :flavor => 'm1.small',
-    :args   => [""],
   },
   {
     :name   => "vfc",
@@ -527,7 +536,9 @@ Vagrant.configure("2") do |config|
 
         nodeconfig.vm.provision 'shell' do |s|
           s.path = run_path
-          s.args = node[:args]
+          if node.has_key? :args
+            s.args = node[:args]
+          end
           s.env  = configuration
         end
 

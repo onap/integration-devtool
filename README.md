@@ -40,27 +40,28 @@ questions faced by new developers
 
 current options include:
 
-| app_name   | description                         |
-|:----------:|-------------------------------------|
-| aai        | Active and Available Inventory      |
-| appc       | Application Controller              |
-| ccsdk      | Common Controller SDK               |
-| dcae       | Data Collection Analytics & Events  |
-| dmaap      | Data Movement as a Platform         |
-| mr         | Message Router                      |
-| mso        | Master Service Orchestrator         |
-| msb        | Microservices Bus Project           |
-| multicloud | Multi Cloud                         |
-| oom        | ONAP Operations Manager             |
-| policy     | Policy                              |
-| portal     | Portal                              |
-| robot      | Robot                               |
-| sdc        | Service Design & Creation           |
-| sdnc       | Software Defined Network Controller |
-| vfc        | Virtual Function Controller         |
-| vid        | Virtual Infrastructure Development  |
-| vnfsdk     | VNF SDK                             |
-| vvp        | VNF Validation Program              |
+| app_name    | description                         |
+|:-----------:|-------------------------------------|
+| aai         | Active and Available Inventory      |
+| appc        | Application Controller              |
+| ccsdk       | Common Controller SDK               |
+| dcae        | Data Collection Analytics & Events  |
+| dmaap       | Data Movement as a Platform         |
+| integration | Integration                         |
+| mr          | Message Router                      |
+| mso         | Master Service Orchestrator         |
+| msb         | Microservices Bus Project           |
+| multicloud  | Multi Cloud                         |
+| oom         | ONAP Operations Manager             |
+| policy      | Policy                              |
+| portal      | Portal                              |
+| robot       | Robot                               |
+| sdc         | Service Design & Creation           |
+| sdnc        | Software Defined Network Controller |
+| vfc         | Virtual Function Controller         |
+| vid         | Virtual Infrastructure Development  |
+| vnfsdk      | VNF SDK                             |
+| vvp         | VNF Validation Program              |
 
 | app_name   | description                              |
 |:----------:|------------------------------------------|

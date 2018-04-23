@@ -10,6 +10,7 @@ src_folders=(
 ["ccsdk"]="$git_src_folder/ccsdk"
 ["dcae"]="$git_src_folder/dcae"
 ["dmaap"]="$git_src_folder/dmaap"
+["integration"]="$git_src_folder/integration"
 ["mr"]="$git_src_folder/dcae/message-router"
 ["msb"]="$git_src_folder/msb"
 ["mso"]="$git_src_folder/mso"
@@ -51,6 +52,7 @@ dcae/utils/buildtools"
 dmaap/messagerouter dmaap/messagerouter/dmaapclient \
 dmaap/messagerouter/messageservice dmaap/messagerouter/mirroragent \
 dmaap/messagerouter/msgrtr"
+["integration"]="integration integration/devtool integration/seccom"
 ["msb"]="msb/apigateway msb/discovery msb/java-sdk msb/swagger-sdk"
 ["mso"]="mso mso/chef-repo mso/docker-config mso/libs mso/mso-config"
 ["multicloud"]="multicloud multicloud/framework multicloud/openstack \
