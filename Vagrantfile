@@ -171,6 +171,7 @@ nodes = [
     :fwds   => [
       { :guest => 8880, :host => 8880, :guest_ip => '192.168.50.21' },
       { :guest => 8989, :host => 8989, :guest_ip => '192.168.50.21' },
+      { :guest => 8080, :host => 8888, :guest_ip => '192.168.50.21' },
     ]
   },
   {
@@ -487,7 +488,7 @@ Vagrant.configure("2") do |config|
         end
 
         # Set Box type
-        if "openstack" == node[:name]
+        if ["openstack", "oom"].include? node[:name]
           box = {
             :virtualbox => 'ubuntu/xenial64',
             :libvirt => 'elastic/ubuntu-16.04-x86_64'

@@ -12,6 +12,13 @@ fi
 
 source /var/onap/functions
 
+if [[ $no_proxy && $no_proxy != *$IP_ADDRESS* ]]; then
+    export no_proxy=$no_proxy,$IP_ADDRESS
+fi
+if [[ $NO_PROXY && $NO_PROXY != *$IP_ADDRESS* ]]; then
+    export NO_PROXY=$NO_PROXY,$IP_ADDRESS
+fi
+
 update_repos
 create_configuration_files
 configure_bind

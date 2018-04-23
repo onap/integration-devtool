@@ -3,6 +3,11 @@
 source /var/onap/_commons
 source /var/onap/_onap_functions
 
+RANCHER_PORT=8880
+export RANCHER_URL=http://localhost:$RANCHER_PORT
+export RANCHER_ACCESS_KEY='access_key'
+export RANCHER_SECRET_KEY='secret_key'
+
 # _install_bind() - Install bind utils
 function _install_bind {
     install_packages bind9 bind9utils
@@ -83,6 +88,7 @@ function _install_pip {
     if ! which pip; then
         curl -sL https://bootstrap.pypa.io/get-pip.py | python
     fi
+    pip install --upgrade pip
 }
 
 # install_python_package() - Install python modules
@@ -296,4 +302,177 @@ function install_haproxy {
         rhel|centos|fedora)
         ;;
     esac
+}
+# _install_rancher() - Function that installs Rancher CLI and container
+function _install_rancher {
+    local rancher_version=v0.6.5
+    local rancher_server_version=v1.6.10
+    local rancher_server=rancher/server:$rancher_server_version
+
+    if [ ! -d /opt/rancher/current ]; then
+        mkdir -p /opt/rancher/current
+        wget https://github.com/rancher/cli/releases/download/$rancher_version/rancher-linux-amd64-$rancher_version.tar.gz
+        tar -xzf rancher-linux-amd64-$rancher_version.tar.gz -C /tmp
+        mv /tmp/rancher-$rancher_version/rancher /opt/rancher/current/
+    fi
+
+    if ! $(docker version &>/dev/null); then
+        curl https://releases.rancher.com/install-docker/1.12.sh | sh
+        _configure_docker_settings 15
+    fi
+    pull_docker_image $rancher_server
+    run_docker_image -d --restart=unless-stopped -p $RANCHER_PORT:8080 $rancher_server
+    while true; do
+        if curl --fail -X GET $RANCHER_URL; then
+            break
+        fi
+        echo "waiting for racher"
+        sleep $oom_delay
+    done
+}
+
+# install_kubernetes() - Function that deploys kubernetes
+function install_kubernetes {
+    local installer_k8s_type=${1:-rancher}
+
+    case $installer_k8s_type in
+        kubespray)
+        _install_kubespray_k8s
+        ;;
+        rancher)
+        _install_rancher_k8s
+        ;;
+    esac
+}
+
+# _install_kubespray_k8s() - Function that installs Kubernetes using kubespray tool
+function _install_kubespray_k8s {
+    local src_folder=/opt/kubespray
+
+    clone_repo kubernetes-incubator/kubespray $src_folder https://github.com/
+    install_python_package netaddr
+    install_python_package ansible==2.4.0.0
+    pushd $src_folder
+    rm -rf inventory/*
+    mkdir -p inventory/group_vars
+    cp /var/onap/files/aio_inventory.cfg ./inventory/inventory.cfg
+    cp /var/onap/files/k8s-cluster.yml ./inventory/group_vars/
+
+    swapoff -a
+    if [ $http_proxy ]; then
+        sed -i "s|#http_proxy: \"\"|http_proxy: \"$http_proxy\"|g" ./inventory/group_vars/k8s-cluster.yml
+    fi
+    if [ $https_proxy ]; then
+        sed -i "s|#https_proxy: \"\"|https_proxy: \"$https_proxy\"|g" ./inventory/group_vars/k8s-cluster.yml
+    fi
+    if [ $no_proxy ]; then
+        sed -i "s|#no_proxy: \"\"|no_proxy: \"$no_proxy\"|g" ./inventory/group_vars/k8s-cluster.yml
+    fi
+
+    echo "  type: NodePort" >> roles/kubernetes-apps/ansible/templates/dashboard.yml.j2
+    ansible-playbook -vvv -i inventory/inventory.cfg cluster.yml -b | tee setup-kubernetes.log
+    popd
+}
+
+# _pull_rancher_images() - Function that retrieves Rancher images required for k8s
+function _pull_rancher_images {
+    for image in "net:v0.13.5" "k8s:v1.8.5-rancher3" \
+"lb-service-rancher:v0.7.17" "network-manager:v0.7.18" "metadata:v0.9.5" \
+"kubectld:v0.8.5" "kubernetes-agent:v0.6.6" "dns:v0.15.3" \
+"kubernetes-auth:v0.0.8" "healthcheck:v0.3.3" "etcd:v2.3.7-13" \
+"etc-host-updater:v0.0.3" "net:holder"; do
+        pull_docker_image rancher/$image &
+    done
+}
+
+# _pull_k8s_images() - Function that retrieves Google k8s images
+function _pull_k8s_images {
+    for image in "kubernetes-dashboard-amd64:v1.7.1" \
+"k8s-dns-sidecar-amd64:1.14.5" "k8s-dns-kube-dns-amd64:1.14.5" \
+"k8s-dns-dnsmasq-nanny-amd64:1.14.5" "heapster-influxdb-amd64:v1.3.3" \
+"heapster-grafana-amd64:v4.4.3" "heapster-amd64:v1.4.0" "pause-amd64:3.0"; do
+        pull_docker_image gcr.io/google_containers/$image &
+    done
+}
+
+# _install_rancher_k8s() - Function that installs Kubernetes thru Rancher Container
+function _install_rancher_k8s {
+    local rancher_agent_version=v1.2.7
+    local rancher_agent=rancher/agent:$rancher_agent_version
+
+    _install_rancher
+
+    _pull_rancher_images
+    _pull_k8s_images
+    pull_docker_image $rancher_agent
+    wait_docker_pull
+
+    pushd /opt/rancher/current/
+    export RANCHER_ENVIRONMENT=`./rancher env create -t kubernetes onap_on_kubernetes`
+    popd
+
+    install_python_package rancher-agent-registration
+    export no_proxy=$no_proxy,$IP_ADDRESS
+    rancher-agent-registration --host-ip $IP_ADDRESS --url http://$IP_ADDRESS:$RANCHER_PORT --environment $RANCHER_ENVIRONMENT --key $RANCHER_ACCESS_KEY --secret $RANCHER_SECRET_KEY
+}
+
+# _install_kubectl() - Function that installs kubectl as client for kubernetes
+function _install_kubectl {
+    local version=${1:-$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)}
+
+    if ! $(kubectl version &>/dev/null); then
+        rm -rf ~/.kube
+        curl -LO https://storage.googleapis.com/kubernetes-release/release/$version/bin/linux/amd64/kubectl
+        chmod +x ./kubectl
+        mv ./kubectl /usr/local/bin/kubectl
+        mkdir ~/.kube
+        pushd ~/.kube
+        python /var/onap/files/kubectl_config_generator.py
+        popd
+    fi
+}
+
+# install_helm() - Function that install Kubernetes Package Manager
+function install_helm {
+    local helm_version=v2.7.2
+    local helm_tarball=helm-${helm_version}-linux-amd64.tar.gz
+
+    if ! $(helm version &>/dev/null); then
+        wget http://storage.googleapis.com/kubernetes-helm/$helm_tarball
+        tar -zxvf $helm_tarball -C /tmp
+        rm $helm_tarball
+        mv /tmp/linux-amd64/helm /usr/local/bin/helm
+        _install_kubectl
+        kubectl create serviceaccount --namespace kube-system tiller
+        kubectl create clusterrolebinding tiller-cluster-rule --clusterrole=cluster-admin --serviceaccount=kube-system:tiller
+        kubectl patch deploy --namespace kube-system tiller-deploy -p '{"spec":{"template":{"spec":{"serviceAccount":"tiller"}}}}'
+        helm init --service-account tiller
+        helm repo update
+    fi
+}
+
+# _install_openstack() - Function that installs OpenStack services thru OpenStack-Helm project
+function _install_openstack {
+    local src_folder=/opt/openstack-helm
+
+    clone_repo openstack/openstack-helm $src_folder https://github.com/
+    install_python_package python-openstackclient python-heatclient
+    mkdir -p /etc/openstack
+    chown -R $(id -un): /etc/openstack
+    tee /etc/openstack/clouds.yaml << EOF
+clouds:
+  openstack_helm:
+    region_name: RegionOne
+    identity_api_version: 3
+    auth:
+      username: 'admin'
+      password: 'password'
+      project_name: 'admin'
+      project_domain_name: 'default'
+      user_domain_name: 'default'
+      auth_url: 'http://keystone.openstack.svc.cluster.local/v3'
+EOF
+    pushd $src_folder
+    make all
+    popd
 }

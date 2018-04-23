@@ -1,8 +1,13 @@
-ONAP on Vagrant tool
-====================
+Devtool
+=======
 
-This project collects instructions to setup a development environment
-using different providers like VirtualBox, Libvirt or OpenStack.
+This project provides an automated tool for provisioning ONAP
+development environment. It covers some common development tasks such
+as cloning source code repositories, compiling java artifacts and
+building Docker images. This has been vehicle to standardize
+development process and dependencies associated with their components
+through an automated provisioning mechanism.
+
 
 .. seealso::
 
