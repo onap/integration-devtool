@@ -40,7 +40,7 @@ case $provider in
 esac
 source /etc/os-release || source /usr/lib/os-release
 
-declare -r libvirt_group="libvirt"
+libvirt_group="libvirt"
 packages=()
 case ${ID,,} in
     *suse)
