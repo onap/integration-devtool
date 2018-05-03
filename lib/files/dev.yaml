@@ -54,39 +54,39 @@ global:
 aaf:
   enabled: false
 aai:
-  enabled: false
-appc:
-  enabled: false
-clamp:
   enabled: true
+appc:
+  enabled: true
+clamp:
+  enabled: false
 cli:
-  enabled: false
+  enabled: true
 consul:
-  enabled: false
+  enabled: true
 dcaegen2:
   enabled: false
 esr:
   enabled: false
 log:
-  enabled: false
+  enabled: true
 message-router:
-  enabled: false
+  enabled: true
 mock:
   enabled: false
 msb:
-  enabled: false
+  enabled: true
 multicloud:
-  enabled: false
+  enabled: true
 policy:
-  enabled: false
+  enabled: true
 portal:
-  enabled: false
+  enabled: true
 robot:
   enabled: true
 sdc:
-  enabled: false
+  enabled: true
 sdnc:
-  enabled: false
+  enabled: true
 
   replicaCount: 1
 

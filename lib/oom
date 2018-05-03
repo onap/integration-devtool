@@ -44,8 +44,10 @@ for (i in vname) {
 # get_oom_images() - Function that retrieves ONAP images from official hub
 function get_oom_images {
     if [[ "$build_image" == "True" ]]; then
-        # TODO(electrocucaracha): Create a function for calling the build docker function of every ONAP project
-        echo "Not Implemented"
+        for project in aai appc dcae dmaap mr msb mso multicloud policy portal robot sdc sdnc vfc vid; do
+            source /var/onap/$project
+            get_${project}_images
+        done
     else
         if [[ "$clone_repo" != "True" ]]; then
             clone_repos "oom"
@@ -62,13 +64,21 @@ function get_oom_images {
 
 # install_oom() - Function that clones OOM and deploys ONAP
 function install_oom {
+    local k8s_deployment_tool="kubespray"
+
     mount_external_partition sda /var/lib/docker/
     install_kubernetes kubespray
-    install_helm
+    if [[ "$deployment_tool" == "rancher" ]]; then
+        pushd ~/.kube
+        install_python_package requests
+        python /var/onap/files/kubectl_config_generator.py
+        popd
+    fi
     until kubectl cluster-info; do
         echo "waiting for kubernetes host"
         sleep $oom_delay
     done
+    install_helm
     printf "Kubernetes Info\n===============\n" > k8s_info.log
     echo "Dashboard URL: http://$IP_ADDRESS:$(kubectl get service -n kube-system |grep kubernetes-dashboard | awk '{print $5}' |awk -F "[:/]" '{print $2}')" >> k8s_info.log
     echo "Admin user: $(cat /etc/kubernetes/users/known_users.csv |awk -F ',' '{print $2}')" >> k8s_info.log
@@ -88,7 +98,6 @@ function init_oom {
     if [[ "$clone_repo" == "True" ]]; then
         clone_repos "oom"
     fi
-
     if [[ "$skip_get_images" == "False" ]]; then
         get_oom_images
     fi

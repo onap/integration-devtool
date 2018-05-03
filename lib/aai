@@ -70,7 +70,7 @@ function get_aai_images {
     local elasticsearch_version=2.4.1
     local hbase_version=1.2.0
 
-    pull_docker_image cassandra:${cassandra_version} &
+    pull_docker_image cassandra:${cassandra_version}
     pull_docker_image elasticsearch:${elasticsearch_version} &
     docker_openecomp_login
     pull_docker_image ${nexus_docker_repo:-nexus3.onap.org:10001}/aaionap/hbase:${hbase_version} &

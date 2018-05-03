@@ -4,12 +4,6 @@ if [[ "$debug" == "True" ]]; then
     set -o xtrace
 fi
 
-if [[ "$1" == "openstack" ]]; then
-    source /var/onap/openstack
-    deploy_openstack
-    exit
-fi
-
 source /var/onap/functions
 
 if [[ $no_proxy && $no_proxy != *$IP_ADDRESS* ]]; then
@@ -25,7 +19,7 @@ configure_bind
 
 for serv in $@; do
     source /var/onap/${serv}
-    configure_service ${serv}_serv.sh
+    configure_service ${serv}
     init_${serv}
     echo "source /var/onap/${serv}" >> ~/.bashrc
 done

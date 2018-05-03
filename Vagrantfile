@@ -54,17 +54,6 @@ nodes = [
     ]
   },
   {
-    :name   => "all-in-one",
-    :ips    => ['10.252.1.3', "192.168.51.3"],
-    :macs   => [],
-    :cpus   => 2,
-    :cpu    => "50",
-    :ram    => 12 * 1024,
-    :groups => ["all-in-one"],
-    :flavor => 'm1.xlarge',
-    :args   => ['mr', 'sdc', 'aai', 'mso', 'robot', 'vid', 'sdnc', 'portal', 'dcae', 'policy', 'appc', 'vfc', 'ccsdk', 'multicloud', 'vnfsdk', 'vpp', 'msb'],
-  },
-  {
     :name   => "appc",
     :ips    => ['10.252.0.14', "192.168.50.14"],
     :macs   => [],
@@ -174,10 +163,10 @@ nodes = [
     :macs   => [],
     :cpus   => 16,
     :cpu    => "50",
-    :ram    => 64 * 1024,
+    :ram    => 70 * 1024,
     :groups => ["individual"],
     :args   => ["oom"],
-    :hd     => { :virtualbox => "61440", :libvirt => "60G", },
+    :hd     => { :virtualbox => "163840", :libvirt => "160G", },
     :fwds   => [
       { :guest => 8880, :host => 8880, :guest_ip => '192.168.50.21' },
       { :guest => 8989, :host => 8989, :guest_ip => '192.168.50.21' },
@@ -333,7 +322,7 @@ requested_machine = ARGV[1]
 
 deploy_mode = ENV.fetch('DEPLOY_MODE', 'individual')
 if requested_machine != nil
-    if requested_machine.include?("all-in-one") || requested_machine.include?("testing")
+    if requested_machine.include?("testing")
         deploy_mode = requested_machine
     end
 end
@@ -345,15 +334,8 @@ end
 
 puts "[INFO] Deploy Mode:  #{deploy_mode}"
 
-# In case of all-in-one or testing clean the nodes list
+# In case of testing clean the nodes list
 case deploy_mode
-    when 'all-in-one'
-        nodes.select! do |node|
-            if node[:name].include?("all-in-one")
-              true if node[:name]
-            end
-        end
-
     when 'individual'
         nodes.select! do |node|
             if node[:groups][0].include?("individual")

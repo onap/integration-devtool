@@ -109,12 +109,11 @@ function install_python_requirements {
     popd
 }
 
-# _configure_docker_settings() - Configures Docker settings
-function _configure_docker_settings {
+# _configure_docker_proxy() - Configure Docker proxy settings
+function _configure_docker_proxy {
     local docker_conf_backup=/tmp/docker.backup
-    local docker_conf=/etc/default/docker
+    local docker_conf=${1:-/etc/default/docker}
     local chameleonsocks_filename=chameleonsocks.sh
-    local max_concurrent_downloads=${1:-3}
 
     cp ${docker_conf} ${docker_conf_backup}
     if [ $http_proxy ]; then
@@ -129,12 +128,21 @@ function _configure_docker_settings {
             chmod 755 $chameleonsocks_filename
             socks=$(echo $socks_proxy | sed -e "s/^.*\///" | sed -e "s/:.*$//")
             port=$(echo $socks_proxy | sed -e "s/^.*://")
+            ./$chameleonsocks_filename --uninstall
             PROXY=$socks PORT=$port ./$chameleonsocks_filename --install
             rm $chameleonsocks_filename
             cp ${docker_conf_backup} ${docker_conf}
         fi
     fi
     rm ${docker_conf_backup}
+}
+
+# _configure_docker_settings() - Configures Docker settings
+function _configure_docker_settings {
+    local docker_conf=/etc/default/docker
+    local max_concurrent_downloads=${1:-3}
+
+    _configure_docker_proxy $docker_conf
 
     echo "DOCKER_OPTS=\"-H tcp://0.0.0.0:2375 -H unix:///var/run/docker.sock --max-concurrent-downloads $max_concurrent_downloads \"" >> $docker_conf
     usermod -aG docker $USER
@@ -334,15 +342,7 @@ function _install_rancher {
 # install_kubernetes() - Function that deploys kubernetes
 function install_kubernetes {
     local installer_k8s_type=${1:-rancher}
-
-    case $installer_k8s_type in
-        kubespray)
-        _install_kubespray_k8s
-        ;;
-        rancher)
-        _install_rancher_k8s
-        ;;
-    esac
+    _install_${installer_k8s_type}_k8s
 }
 
 # _install_kubespray_k8s() - Function that installs Kubernetes using kubespray tool
@@ -352,6 +352,7 @@ function _install_kubespray_k8s {
     clone_repo kubernetes-incubator/kubespray $src_folder https://github.com/
     install_python_package netaddr
     install_python_package ansible==2.4.0.0
+    install_docker
     pushd $src_folder
     rm -rf inventory/*
     mkdir -p inventory/group_vars
@@ -372,6 +373,8 @@ function _install_kubespray_k8s {
     echo "  type: NodePort" >> roles/kubernetes-apps/ansible/templates/dashboard.yml.j2
     ansible-playbook -vvv -i inventory/inventory.cfg cluster.yml -b | tee setup-kubernetes.log
     popd
+    swapon -a
+    _configure_docker_proxy
 }
 
 # _pull_rancher_images() - Function that retrieves Rancher images required for k8s
@@ -426,9 +429,6 @@ function _install_kubectl {
         chmod +x ./kubectl
         mv ./kubectl /usr/local/bin/kubectl
         mkdir ~/.kube
-        pushd ~/.kube
-        python /var/onap/files/kubectl_config_generator.py
-        popd
     fi
 }
 

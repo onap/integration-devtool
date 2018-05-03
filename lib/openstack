@@ -63,13 +63,52 @@ function get_openstack_images {
     fi
 }
 
-# deploy_openstack() - Function that provisions an OpenStack deployment
-function deploy_openstack {
+# install_openstack() - Function that installs OpenStack services
+function install_openstack {
+    local installer_os_type=${1:-kolla_ansible}
+    _install_${installer_os_type}
+}
+
+# _install_kolla_ansible() - Function that installs OpenStack services thru Kolla-Ansible project
+function _install_kolla_ansible {
     install_dependencies
     configure_deploy ${1:-"192.168.53.0"} "True"
-
     get_openstack_images
     kolla-ansible deploy -i $kolla_inventory
     kolla-ansible post-deploy
     echo "source /etc/kolla/admin-openrc.sh" >> ${HOME}/.bashrc
+}
+
+# _install_openstack_helm() - Function that installs OpenStack services thru OpenStack-Helm project
+function _install_openstack_helm {
+    local src_folder=/opt/openstack-helm
+
+    install_kubernetes kubespray
+    install_helm
+    clone_repo openstack/openstack-helm $src_folder https://github.com/
+    install_python_package python-openstackclient python-heatclient
+    mkdir -p /etc/openstack
+    chown -R $(id -un): /etc/openstack
+    tee /etc/openstack/clouds.yaml << EOF
+clouds:
+  openstack_helm:
+    region_name: RegionOne
+    identity_api_version: 3
+    auth:
+      username: 'admin'
+      password: 'password'
+      project_name: 'admin'
+      project_domain_name: 'default'
+      user_domain_name: 'default'
+      auth_url: 'http://keystone.openstack.svc.cluster.local/v3'
+EOF
+    pushd $src_folder
+    make all
+    popd
+}
+
+# init_openstack() - Function that provisions an OpenStack deployment
+function init_openstack {
+    #install_openstack openstack_helm
+    install_openstack
 }

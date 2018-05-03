@@ -65,7 +65,6 @@ current options include:
 
 | app_name   | description                              |
 |:----------:|------------------------------------------|
-| all_in_one | All ONAP services in a VM (experimental) |
 | testing    | Unit Test VM                             |
 
 | app_name   | description          |
