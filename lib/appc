@@ -15,7 +15,7 @@ function get_appc_images {
         _build_appc_images
     else
         for image in appc-image dgbuilder-sdnc-image; do
-            pull_openecomp_image $image openecomp/$image:latest
+            pull_openecomp_image $image ${docker_version:-latest} openecomp/$image:latest
         done
     fi
 }

@@ -52,7 +52,7 @@ function _git_timed {
 
 # clone_repo() - Clone Git repository into specific folder
 function clone_repo {
-    local repo_url=${3:-"https://git.onap.org/"}
+    local repo_url=${3:-$git_url}
     local repo=$1
     local dest_folder=${2:-$git_src_folder/$repo}
     if [ ! -d $dest_folder ]; then
@@ -79,6 +79,8 @@ function pull_docker_image {
     install_docker
     local image=$1
     local tag=$2
+
+    echo "docker pull ${image}"
     docker pull ${image}
     if [ ${tag} ]; then
         docker tag ${image} $tag

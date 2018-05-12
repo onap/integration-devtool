@@ -8,11 +8,13 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-vagrant_version=2.0.3
+vagrant_version=2.1.1
 
 function usage {
     cat <<EOF
-usage: setup.sh -p <PROVIDER>
+usage: $0 -p <PROVIDER>
+Installation of vagrant and its dependencies in Linux OS
+
 Argument:
     -p  Vagrant provider
 EOF

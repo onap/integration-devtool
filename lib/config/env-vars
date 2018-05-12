@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# URL repository
+git_url="https://git.onap.org/"
+
 # Source code destination folder
 git_src_folder=/opt/onap
 

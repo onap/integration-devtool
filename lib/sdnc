@@ -34,7 +34,7 @@ function get_sdnc_images {
         _build_sdnc_images
     else
         for image in sdnc-image admportal-sdnc-image dgbuilder-sdnc-image; do
-            pull_openecomp_image $image openecomp/$image:latest
+            pull_openecomp_image $image ${docker_version:-latest} openecomp/$image:latest
         done
     fi
     pull_docker_image mysql/mysql-server:5.6

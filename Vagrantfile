@@ -161,17 +161,12 @@ nodes = [
     :name   => "oom",
     :ips    => ['10.252.0.21', "192.168.50.21"],
     :macs   => [],
-    :cpus   => 16,
+    :cpus   => 32,
     :cpu    => "50",
-    :ram    => 70 * 1024,
+    :ram    => 128 * 1024,
     :groups => ["individual"],
     :args   => ["oom"],
     :hd     => { :virtualbox => "163840", :libvirt => "160G", },
-    :fwds   => [
-      { :guest => 8880, :host => 8880, :guest_ip => '192.168.50.21' },
-      { :guest => 8989, :host => 8989, :guest_ip => '192.168.50.21' },
-      { :guest => 8080, :host => 8888, :guest_ip => '192.168.50.21' },
-    ]
   },
   {
     :name   => "policy",

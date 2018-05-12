@@ -15,7 +15,7 @@ function get_vid_images {
     if [[ "$build_image" == "True" ]]; then
         _build_vid_images
     else
-        pull_openecomp_image vid
+        pull_openecomp_image vid ${docker_version:-latest}
     fi
     pull_docker_image mariadb:10
 }

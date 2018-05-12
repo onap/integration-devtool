@@ -350,10 +350,9 @@ function _install_kubespray_k8s {
     local src_folder=/opt/kubespray
 
     clone_repo kubernetes-incubator/kubespray $src_folder https://github.com/
-    install_python_package netaddr
-    install_python_package ansible==2.4.0.0
     install_docker
     pushd $src_folder
+    install_python_requirements .
     rm -rf inventory/*
     mkdir -p inventory/group_vars
     cp /var/onap/files/aio_inventory.cfg ./inventory/inventory.cfg

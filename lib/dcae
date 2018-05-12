@@ -51,8 +51,8 @@ function get_dcae_images {
     if [[ "$build_image" == "True" ]]; then
         _build_dcae_images
     else
-        pull_openecomp_image dcae-dmaapbc openecomp/dcae-dmaapbc
-        pull_openecomp_image dcae-controller
+        pull_openecomp_image dcae-dmaapbc ${docker_version:-latest} openecomp/dcae-dmaapbc
+        pull_openecomp_image dcae-controller ${docker_version:-latest}
     fi
 }
 

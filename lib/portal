@@ -44,8 +44,8 @@ function get_portal_images {
     if [[ "$build_image" == "True" ]]; then
         _build_portal_images
     else
-        pull_openecomp_image portaldb ecompdb:portal
-        pull_openecomp_image portalapps ep:1610-1
+        pull_openecomp_image portaldb ${docker_version:-latest} ecompdb:portal
+        pull_openecomp_image portalapps ${docker_version:-latest} ep:1610-1
     fi
     pull_docker_image mariadb
 }
