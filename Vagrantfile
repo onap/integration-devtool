@@ -41,6 +41,7 @@ box = {
 nodes = [
     {
     :name   => "aai",
+    :hostname => "aai.hbase.simpledemo.onap.org",
     :ips    => ['10.252.0.6', "192.168.50.6"],
     :macs   => [],
     :cpus   => 2,
@@ -483,7 +484,7 @@ Vagrant.configure("2") do |config|
         nodeconfig.vm.box = box[provider]
 
         # Set Node name
-        nodeconfig.vm.hostname = node[:name]
+        nodeconfig.vm.hostname = if node.has_key? :hostname then node[:hostname] else node[:name] end
 
         # Set Sync Folder
         nodeconfig.vm.synced_folder ".", "/vagrant", disabled: true
