@@ -73,10 +73,14 @@ function install_openstack {
 function _install_kolla_ansible {
     install_dependencies
     configure_deploy ${1:-"192.168.53.0"} "True"
-    get_openstack_images
-    kolla-ansible deploy -i $kolla_inventory
-    kolla-ansible post-deploy
-    echo "source /etc/kolla/admin-openrc.sh" >> ${HOME}/.bashrc
+    if [[ "$skip_get_images" == "False" ]]; then
+        get_openstack_images
+    fi
+    if [[ "$skip_install" == "False" ]]; then
+        kolla-ansible deploy -i $kolla_inventory
+        kolla-ansible post-deploy
+        echo "source /etc/kolla/admin-openrc.sh" >> ${HOME}/.bashrc
+    fi
 }
 
 # _install_openstack_helm() - Function that installs OpenStack services thru OpenStack-Helm project
