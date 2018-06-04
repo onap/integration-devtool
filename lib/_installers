@@ -235,23 +235,20 @@ function _install_ODL {
 
 # install_go() - Install GoLang package
 function install_go {
-    if is_package_installed golang-go; then
+    if $(go version &>/dev/null); then
         return
     fi
-    source /etc/os-release || source /usr/lib/os-release
-    case ${ID,,} in
-        *suse)
-        ;;
-        ubuntu|debian)
-            install_package software-properties-common
-            add-apt-repository -y ppa:gophers/archive
-        ;;
-        rhel|centos|fedora)
-        ;;
-    esac
-    update_repos
+    local version=1.10.2
+    local os=linux
+    local arch=amd64
+    local tarball=go$version.$os-$arch.tar.gz
 
-    install_package golang-go
+    wget https://dl.google.com/go/$tarball
+    tar -C /usr/local -xzf $tarball
+    rm $tarball
+
+    export PATH=$PATH:/usr/local/go/bin
+    sed -i "s|^PATH=.*|PATH=\"$PATH\"|" /etc/environment
 }
 
 # install_dep() - Install dep GoLand tool
@@ -433,7 +430,7 @@ function _install_kubectl {
 
 # install_helm() - Function that install Kubernetes Package Manager
 function install_helm {
-    local helm_version=v2.7.2
+    local helm_version=v2.8.2
     local helm_tarball=helm-${helm_version}-linux-amd64.tar.gz
 
     if ! $(helm version &>/dev/null); then
