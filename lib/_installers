@@ -311,7 +311,7 @@ function install_haproxy {
 # _install_rancher() - Function that installs Rancher CLI and container
 function _install_rancher {
     local rancher_version=v0.6.5
-    local rancher_server_version=v1.6.10
+    local rancher_server_version=v1.6.14
     local rancher_server=rancher/server:$rancher_server_version
 
     if [ ! -d /opt/rancher/current ]; then
