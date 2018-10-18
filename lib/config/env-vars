@@ -19,6 +19,7 @@ src_folders=(
 ["aai"]="$git_src_folder/aai"
 ["appc"]="$git_src_folder/appc"
 ["ccsdk"]="$git_src_folder/ccsdk"
+["ci-management"]="$git_src_folder/ci-management"
 ["dcae"]="$git_src_folder/dcae"
 ["dmaap"]="$git_src_folder/dmaap"
 ["integration"]="$git_src_folder/integration"
@@ -52,6 +53,7 @@ ccsdk/platform/blueprints ccsdk/platform/nbapi \
 ccsdk/platform/plugins ccsdk/sli ccsdk/sli/adaptors ccsdk/sli/core \
 ccsdk/sli/northbound ccsdk/sli/plugins ccsdk/storage \
 ccsdk/storage/esaas ccsdk/storage/pgaas ccsdk/utils"
+["ci-management"]="ci-management"
 ["dcae"]="dcae dcae/apod dcae/apod/analytics dcae/apod/buildtools \
 dcae/apod/cdap dcae/collectors dcae/collectors/ves dcae/controller \
 dcae/controller/analytics dcae/dcae-inventory dcae/demo \

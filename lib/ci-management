@@ -1,0 +1,29 @@
+#!/bin/bash
+# SPDX-license-identifier: Apache-2.0
+##############################################################################
+# Copyright (c) 2017-2018
+# All rights reserved. This program and the accompanying materials
+# are made available under the terms of the Apache License, Version 2.0
+# which accompanies this distribution, and is available at
+# http://www.apache.org/licenses/LICENSE-2.0
+#############################################################################
+
+source /var/onap/functions
+
+# init_ci-management() - Init ci-management project
+function init_ci-management {
+    local jenkins_username=${1:-$(git config --get gitreview.username)}
+    local jenkins_api_token=$2
+
+    if [[ "$clone_repo" == "True" ]]; then
+        clone_repos "ci-management"
+        pushd ${src_folders[ci-management]}
+        git submodule update --init
+        uninstall_package python-six
+        install_python_package jenkins-job-builder
+        cp jenkins.ini.example jenkins.ini
+        sed -i "s|user=#username#|user=$jenkins_username|g" jenkins.ini
+        sed -i "s|password=#api_token#|password=$jenkins_api_token|g" jenkins.ini
+        popd
+    fi
+}
