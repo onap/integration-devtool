@@ -8,7 +8,17 @@
 # http://www.apache.org/licenses/LICENSE-2.0
 ##############################################################################
 
-vagrant_version=2.1.1
+set -o nounset
+set -o pipefail
+
+vagrant_version=2.2.0
+if ! $(vagrant version &>/dev/null); then
+    enable_vagrant_install=true
+else
+    if [[ "$vagrant_version" != "$(vagrant version | awk 'NR==1{print $3}')" ]]; then
+        enable_vagrant_install=true
+    fi
+fi
 
 function usage {
     cat <<EOF
@@ -31,6 +41,10 @@ while getopts ":p:" OPTION; do
         ;;
     esac
 done
+if [[ -z "${provider+x}" ]]; then
+    usage
+    exit 1
+fi
 
 case $provider in
     "virtualbox" | "libvirt" )
@@ -47,17 +61,20 @@ packages=()
 case ${ID,,} in
     *suse)
     INSTALLER_CMD="sudo -H -E zypper -q install -y --no-recommends"
+    packages+=(python-devel)
 
     # Vagrant installation
-    vagrant_pgp="pgp_keys.asc"
-    wget -q https://keybase.io/hashicorp/$vagrant_pgp
-    wget -q https://releases.hashicorp.com/vagrant/$vagrant_version/vagrant_${vagrant_version}_x86_64.rpm
-    gpg --quiet --with-fingerprint $vagrant_pgp
-    sudo rpm --import $vagrant_pgp
-    sudo rpm --checksig vagrant_${vagrant_version}_x86_64.rpm
-    sudo rpm --install vagrant_${vagrant_version}_x86_64.rpm
-    rm vagrant_${vagrant_version}_x86_64.rpm
-    rm $vagrant_pgp
+    if [[ "${enable_vagrant_install+x}" ]]; then
+        vagrant_pgp="pgp_keys.asc"
+        wget -q https://keybase.io/hashicorp/$vagrant_pgp
+        wget -q https://releases.hashicorp.com/vagrant/$vagrant_version/vagrant_${vagrant_version}_x86_64.rpm
+        gpg --quiet --with-fingerprint $vagrant_pgp
+        sudo rpm --import $vagrant_pgp
+        sudo rpm --checksig vagrant_${vagrant_version}_x86_64.rpm
+        sudo rpm --install vagrant_${vagrant_version}_x86_64.rpm
+        rm vagrant_${vagrant_version}_x86_64.rpm
+        rm $vagrant_pgp
+    fi
 
     case $VAGRANT_DEFAULT_PROVIDER in
         virtualbox)
@@ -79,11 +96,14 @@ case ${ID,,} in
     ubuntu|debian)
     libvirt_group="libvirtd"
     INSTALLER_CMD="sudo -H -E apt-get -y -q=3 install"
+    packages+=(python-dev)
 
     # Vagrant installation
-    wget -q https://releases.hashicorp.com/vagrant/$vagrant_version/vagrant_${vagrant_version}_x86_64.deb
-    sudo dpkg -i vagrant_${vagrant_version}_x86_64.deb
-    rm vagrant_${vagrant_version}_x86_64.deb
+    if [[ "${enable_vagrant_install+x}" ]]; then
+        wget -q https://releases.hashicorp.com/vagrant/$vagrant_version/vagrant_${vagrant_version}_x86_64.deb
+        sudo dpkg -i vagrant_${vagrant_version}_x86_64.deb
+        rm vagrant_${vagrant_version}_x86_64.deb
+    fi
 
     case $VAGRANT_DEFAULT_PROVIDER in
         virtualbox)
@@ -94,7 +114,7 @@ case ${ID,,} in
         ;;
         libvirt)
         # vagrant-libvirt dependencies
-        packages+=(qemu libvirt-bin ebtables dnsmasq libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev)
+        packages+=(qemu libvirt-bin ebtables dnsmasq libxslt-dev libxml2-dev libvirt-dev zlib1g-dev ruby-dev cpu-checker)
         # NFS
         packages+=(nfs-kernel-server)
         ;;
@@ -106,11 +126,14 @@ case ${ID,,} in
     PKG_MANAGER=$(which dnf || which yum)
     sudo $PKG_MANAGER updateinfo
     INSTALLER_CMD="sudo -H -E ${PKG_MANAGER} -q -y install"
+    packages+=(python-devel)
 
     # Vagrant installation
-    wget -q https://releases.hashicorp.com/vagrant/$vagrant_version/vagrant_${vagrant_version}_x86_64.rpm
-    $INSTALLER_CMD vagrant_${vagrant_version}_x86_64.rpm
-    rm vagrant_${vagrant_version}_x86_64.rpm
+    if [[ "${enable_vagrant_install+x}" ]]; then
+        wget -q https://releases.hashicorp.com/vagrant/$vagrant_version/vagrant_${vagrant_version}_x86_64.rpm
+        $INSTALLER_CMD vagrant_${vagrant_version}_x86_64.rpm
+        rm vagrant_${vagrant_version}_x86_64.rpm
+    fi
 
     case $VAGRANT_DEFAULT_PROVIDER in
         virtualbox)
@@ -130,8 +153,39 @@ case ${ID,,} in
 
 esac
 
+# Enable Nested-Virtualization
+vendor_id=$(lscpu|grep "Vendor ID")
+if [[ $vendor_id == *GenuineIntel* ]]; then
+    kvm_ok=$(cat /sys/module/kvm_intel/parameters/nested)
+    if [[ $kvm_ok == 'N' ]]; then
+        echo "Enable Intel Nested-Virtualization"
+        rmmod kvm-intel
+        echo 'options kvm-intel nested=y' >> /etc/modprobe.d/dist.conf
+        modprobe kvm-intel
+    fi
+else
+    kvm_ok=$(cat /sys/module/kvm_amd/parameters/nested)
+    if [[ $kvm_ok == '0' ]]; then
+        echo "Enable AMD Nested-Virtualization"
+        rmmod kvm-amd
+        sh -c "echo 'options kvm-amd nested=1' >> /etc/modprobe.d/dist.conf"
+        modprobe kvm-amd
+    fi
+fi
+modprobe vhost_net
+
 ${INSTALLER_CMD} ${packages[@]}
+if ! which pip; then
+    curl -sL https://bootstrap.pypa.io/get-pip.py | sudo python
+fi
+sudo -H pip install --upgrade pip
+sudo -H pip install tox
+if [[ ${http_proxy+x} ]]; then
+    vagrant plugin install vagrant-proxyconf
+fi
 if [ $VAGRANT_DEFAULT_PROVIDER == libvirt ]; then
     vagrant plugin install vagrant-libvirt
-    sudo usermod -a -G $libvirt_group $USER
+    sudo usermod -a -G $libvirt_group $USER # This might require to reload user's group assigments
+    sudo systemctl restart libvirtd
+    kvm-ok
 fi
