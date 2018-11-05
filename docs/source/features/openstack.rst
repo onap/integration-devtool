@@ -5,7 +5,7 @@ OpenStack Provider
 It's possible to use Vagrant to provision VMs on OpenStack using the
 `Vagrant OpenStack Cloud Provider <https://github.com/ggiamarchi/vagrant-openstack-provider/>`.
 The only requirement for the Cloud provider is to have an Ubuntu Cloud
-image accesible to your tenant and a Security Rule that allows to do
+image accessible to your tenant and a Security Rule that allows to do
 SSH into the instance.
 
 Environment variables

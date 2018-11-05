@@ -11,7 +11,7 @@ Settings configuration file
 The first mechanism refers to the process to replace default configuration
 values in the settings configuration file. This file needs to be placed into
 the *./etc* folder and named *settings.yaml*. It must contain the key/pair
-configuration values that will be overriden.
+configuration values that will be overridden.
 
 .. note::
 
@@ -55,7 +55,7 @@ Parameters
 ----------
 
 The **skip_get_images** and **skip_install** are the only two configuration
-values that can be overriden using *-g* and *-i* respectively by the run scripts
+values that can be overridden using *-g* and *-i* respectively by the run scripts
 (*./tools/run.sh* and *.\\tools\\Run.ps1*).
 
 .. note::

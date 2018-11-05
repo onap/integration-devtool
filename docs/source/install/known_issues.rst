@@ -9,7 +9,7 @@ If the **vagrant-vbguest** plugin is installed on the host, then an
 updated version of the Virtualbox guest additions will be installed
 on the guest in the /opt directory.  Once this projects Vagrantfile
 mounts the ./opt directory on the host to the /opt directory on the
-guest during the provisioning process, the guest addtions on the
+guest during the provisioning process, the guest additions on the
 guest are hidden and subsequent mounts of shared directories with the
 host will fail.
 

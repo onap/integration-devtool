@@ -3,13 +3,13 @@ Using the provisioning scripts
 ==============================
 
 Vagrant is a platform that uses prebaked images called
-*vagrant boxes* to guarranty that running multiple times a
+*vagrant boxes* to guarantee that running multiple times a
 provisioning script will result in an expected output. This
 mechanism is crucial for reducing the number of external factors
 during the creation, development and testing of provisioning scripts. 
-However, it's possible to provide an ONAP development enviroment
+However, it's possible to provide an ONAP development environment
 without having to install Vagrant tool. This document explains how to
-consume the provisioning scripts localed in **./lib** folder to
+consume the provisioning scripts located in **./lib** folder to
 provision a development environment and the environment variables
 that modifies their behavior.
 
@@ -52,7 +52,7 @@ and Available Inventory (AAI) service will be required to load the
 Lastly, every script has defined a initialization function with
 *init_* as prefix. This function is the starting point to provision
 the chosen ONAP service. This example uses the *init_aai* function
-to provision a AAI Developement environment.
+to provision a AAI Development environment.
 
 .. note::
 
