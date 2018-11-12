@@ -573,7 +573,7 @@ deploy_onap() {
     sleep 5
     helm repo add local http://127.0.0.1:8879
     make all
-    helm install local/onap -n dev --namespace onap
+    helm install local/onap -n dev --namespace onap --set "global.cacert=$(cat ${CERTS_TARGET_PATH}/rootCAcert.crt)"
     popd
 }
 
