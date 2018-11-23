@@ -151,6 +151,13 @@ update_hosts() {
     fi
 }
 
+# Save variable to local config
+# $1 - Variable name
+# $2 - variable value
+save_to_local_cfg() {
+    echo "$1='$2'" >> ./local_repo.conf
+}
+
 get_cfg_val() {
     name="$1"
     shift
@@ -164,7 +171,7 @@ get_cfg_val() {
 
             value=$(eval "echo \$${name}")
         done
-        echo "${name}='${value}'" >> ./local_repo.conf
+	save_to_local_cfg "${name}" "${value}"
     fi
 }
 
@@ -173,38 +180,24 @@ get_configuration() {
         . ./local_repo.conf
     fi
 
-    if [ -z "${NEXUS_FQDN}" ]; then
-        NEXUS_FQDN="nexus.$HOSTNAME"
-        echo "NEXUS_FQDN='${NEXUS_FQDN}'" >> ./local_repo.conf
-    fi
-
-    if [ -z "${ONAP_SCALE}" ]; then
-        ONAP_SCALE=full
-        echo "ONAP_SCALE='${ONAP_SCALE}'" >> ./local_repo.conf
-    fi
-
+    # Optional Variables
+    declare -A default_value=(
+	["NEXUS_FQDN"]="nexus.$HOSTNAME"
+	["ONAP_SCALE"]=full
     # nexus should be configured using those default entries
     # if it was not put the correct inputs instead
-    if [ -z "${NPM_USERNAME}" ]; then
-        NPM_USERNAME="${NEXUS_USERNAME}"
-        echo "NPM_USERNAME='${NPM_USERNAME}'" >> ./local_repo.conf
-    fi
+	["NPM_USERNAME"]="${NEXUS_USERNAME}"
+	["NPM_PASSWORD"]="${NEXUS_PASSWORD}"
+	["NPM_EMAIL"]="${NPM_EMAIL}"
+    )
 
-    if [ -z "${NPM_PASSWORD}" ]; then
-        NPM_PASSWORD="${NEXUS_PASSWORD}"
-        echo "NPM_PASSWORD='${NPM_PASSWORD}'" >> ./local_repo.conf
-    fi
-
-    if [ -z "${NPM_EMAIL}" ]; then
-        NPM_EMAIL="$NEXUS_EMAIL"
-        echo "NPM_EMAIL='${NPM_EMAIL}'" >> ./local_repo.conf
-    fi
-
-    export NEXUS_FQDN
-    export ONAP_SCALE
-    export NPM_USERNAME
-    export NPM_PASSWORD
-    export NPM_EMAIL
+    for VAR in "${!default_value[@]}"; do
+	if [ -z "${!VAR}" ]; then
+	    eval $VAR=${default_value[${VAR}]}
+	    save_to_local_cfg "$VAR" "${!VAR}"
+	fi
+	export $VAR
+    done
 
     NODE_USERNAME="root"
 
