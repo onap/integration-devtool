@@ -1,7 +1,7 @@
 #!/bin/bash
 # SPDX-license-identifier: Apache-2.0
 ##############################################################################
-# Copyright (c) 2017-2018
+# Copyright (c) 2017-2019
 # All rights reserved. This program and the accompanying materials
 # are made available under the terms of the Apache License, Version 2.0
 # which accompanies this distribution, and is available at
@@ -11,7 +11,7 @@
 set -o nounset
 set -o pipefail
 
-vagrant_version=2.2.0
+vagrant_version=2.2.3
 if ! $(vagrant version &>/dev/null); then
     enable_vagrant_install=true
 else
@@ -177,9 +177,10 @@ modprobe vhost_net
 ${INSTALLER_CMD} ${packages[@]}
 if ! which pip; then
     curl -sL https://bootstrap.pypa.io/get-pip.py | sudo python
+else
+    sudo -H -E pip install --upgrade pip
 fi
-sudo -H pip install --upgrade pip
-sudo -H pip install tox
+sudo -H -E pip install tox
 if [[ ${http_proxy+x} ]]; then
     vagrant plugin install vagrant-proxyconf
 fi
@@ -187,5 +188,10 @@ if [ $VAGRANT_DEFAULT_PROVIDER == libvirt ]; then
     vagrant plugin install vagrant-libvirt
     sudo usermod -a -G $libvirt_group $USER # This might require to reload user's group assigments
     sudo systemctl restart libvirtd
+
+    # Start statd service to prevent NFS lock errors
+    sudo systemctl enable rpc-statd
+    sudo systemctl start rpc-statd
+
     kvm-ok
 fi
