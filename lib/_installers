@@ -267,25 +267,25 @@ function install_dep {
 
 # install_hadoop() - Function that installs Hadoop
 function install_hadoop {
-    local release=titan
-    local version=1.0.0
-    local filename=$release-$version-hadoop1
+    local version=0.2.0
+    local filename=janusgraph-$version-hadoop2
     local dest_folder=/opt/hadoop/current
 
     if [ ! -d $dest_folder ]; then
-        curl http://s3.thinkaurelius.com/downloads/$release/$filename.zip -o /tmp/${filename}.zip
+        wget https://github.com/JanusGraph/janusgraph/releases/download/v$version/${filename}.zip
         install_package unzip
         mkdir -p $dest_folder
-        unzip /tmp/${filename}.zip -d $dest_folder
+        unzip ${filename}.zip -d $dest_folder
+        useradd elasticsearch
+        chown -R elasticsearch $dest_folder
     fi
 
     pushd $dest_folder/${filename}
-    # Change commitlog_directory and data_file_directories values (https://stackoverflow.com/a/26856246/1707651)
-    sed -i "s|db/cassandra/data|/tmp/data|g" conf/cassandra/cassandra.yaml
-    sed -i "s|db/cassandra/commitlog|/tmp/commitlog|g" conf/cassandra/cassandra.yaml
-
     install_java
-    ./bin/titan.sh start
+    ./bin/janusgraph.sh status
+    if [[ $? -ne 0 ]]; then
+        su elasticsearch -c "./bin/janusgraph.sh start"
+    fi
     popd
 }
 

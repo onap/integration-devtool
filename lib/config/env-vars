@@ -43,10 +43,12 @@ src_folders=(
 declare -A repos
 repos=(
 ["aai"]="aai/aai-common aai/aai-config aai/aai-data aai/aai-service \
-aai/babel aai/champ aai/data-router aai/esr-gui aai/esr-server aai/gizmo \
-aai/logging-service aai/model-loader aai/resources aai/rest-client \
-aai/router-core aai/search-data-service aai/test-config aai/traversal \
-aai/sparky-fe aai/sparky-be"
+aai/babel aai/cacher aai/chameleon aai/champ aai/data-router aai/eis \
+aai/enricher aai/esr-gui aai/esr-server aai/gallifrey aai/gap \
+aai/gizmo aai/graphadmin aai/graphgraph aai/logging-service \
+aai/model-loader aai/resources aai/rest-client aai/router-core \
+aai/search-data-service aai/sparky-be aai/sparky-fe aai/spike \
+aai/tabular-data-service aai/test-config aai/traversal aai/validation"
 ["appc"]="appc appc/deployment"
 ["ccsdk"]="ccsdk ccsdk/dashboard ccsdk/distribution ccsdk/parent \
 ccsdk/platform/blueprints ccsdk/platform/nbapi \

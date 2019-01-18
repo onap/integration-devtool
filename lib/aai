@@ -22,24 +22,26 @@ function compile_aai_repos {
     done
 }
 
-# setup_titan() - Function that configures AAI services to connect to Hadoop Titan
-function setup_titan {
-    local subdirectory="bundleconfig-local/etc/appprops"
+# setup_janus() - Function that configures AAI services to connect to JanusGraph
+function setup_janus {
+    local subdirectory="src/main/resources/etc/appprops"
     install_python_package crudini
 
-    for dirc in resources/aai-resources traversal/aai-traversal; do
-        for file in titan-cached.properties titan-realtime.properties; do
-            crudini --set "${src_folders[aai]}/$dirc/$subdirectory/$file" "" "storage.backend" "cassandra"
-            crudini --set "${src_folders[aai]}/$dirc/$subdirectory/$file" "" "storage.hostname" "localhost"
+    for repo in resources/aai-resources traversal/aai-traversal graphadmin; do
+        for file in janusgraph-cached.properties janus-realtime.properties; do
+            crudini --set "${src_folders[aai]}/$repo/$subdirectory/$file" "" "storage.backend" "cassandra"
+            crudini --set "${src_folders[aai]}/$repo/$subdirectory/$file" "" "storage.hostname" "localhost"
+            crudini --set "${src_folders[aai]}/$repo/$subdirectory/$file" "" "storage.cassandra.keyspace" "onap"
         done
     done
 
     # Add the schema to the local instance
-    compile_src ${src_folders[aai]}/resources/aai-resources/
-    uninstall_packages default-jre openjdk-7-jdk openjdk-7-jre openjdk-7-jre-headless
-    pushd ${src_folders[aai]}
-    java -DAJSC_HOME=${src_folders[aai]}/resources/aai-resources -DBUNDLECONFIG_DIR="bundleconfig-local" -cp aai-common/aai-core/target/aai-core-*.jar:resources/aai-resources/target/aai-resources.jar:resources/aai-resources/target/userjars/* org.onap.aai.dbgen.GenTester
-    popd
+    for repo in aai-common resources traversal graphadmin logging-service; do
+        compile_src ${src_folders[aai]}/$repo
+    done
+    export PROJECT_HOME=$(find ${src_folders[aai]} -name "aai-graphadmin-*build" -print -quit)
+    export JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64/jre
+    sh /var/onap/files/createDbSchemaLocal.sh
 }
 
 # _start_data_managment() - Funtion that start a data management service
@@ -50,19 +52,25 @@ function _start_data_managment {
     install_maven
     pushd ${src_folders[aai]}/$service
     export MAVEN_OPTS="-Xms1024m -Xmx5120m -XX:PermSize=2024m -Xdebug -Xnoagent -Djava.compiler=NONE -Xrunjdwp:transport=dt_socket,address=$debug_port,server=y,suspend=n"
-    mvn -P runAjsc &
+    java -DAJSC_HOME=aai-$service -DBUNDLECONFIG_DIR=src/main/resources/ -jar $(find ${src_folders[aai]}/$service -name "aai-$service-*-SNAPSHOT.jar" -print -quit) &
     popd
+    sleep 180
 }
 
 # start_aai_microservices() - Function that starts AAI microservices
 function start_aai_microservices {
     _start_data_managment resources 9446
-    sleep 360
+    pushd /var/onap/files/
+    install_package jq
+    ./test-complex
+    popd
     _start_data_managment traversal 9447
 }
 
 # install_aai() - Install AAI Services
 function install_aai {
+    install_nodejs
+    install_maven
     install_docker_compose
     pushd ${src_folders[aai]}/test-config
     ./deploy_vm2.sh
@@ -119,9 +127,9 @@ function init_aai {
         if [[ "$skip_install" == "False" ]]; then
             install_hadoop
             install_haproxy
-            setup_titan
-            #start_aai_microservices
-            install_aai
+            setup_janus
+            start_aai_microservices
+            #install_aai
         fi
     fi
 }
