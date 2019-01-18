@@ -33,8 +33,8 @@ configuration = {
 }
 
 box = {
-  :virtualbox => 'ubuntu/trusty64',
-  :libvirt => 'elastic/ubuntu-14.04-x86_64',
+  :virtualbox => { :name => 'elastic/ubuntu-16.04-x86_64', :version => '20180708.0.0' },
+  :libvirt => { :name => 'elastic/ubuntu-16.04-x86_64', :version=> '20180210.0.0'},
   :openstack => nil
 }
 
@@ -387,12 +387,21 @@ Vagrant.configure("2") do |config|
       config.vm.define node[:name] do |nodeconfig|
 
       # NO_PROXY definitions
-      if ENV['no_proxy'] != nil
+      if ENV['no_proxy'] != nil or ENV['NO_PROXY']
+        $no_proxy = ENV['NO_PROXY'] || ENV['no_proxy'] || "127.0.0.1,localhost"
+        $subnet = "192.168.121"
+        if provider == :virtualbox
+          $subnet = "10.0.2"
+        end
+        # NOTE: This range is based on vagrant-libvirt network definition CIDR 192.168.121.0/27
+        (1..31).each do |i|
+          $no_proxy += ",#{$subnet}.#{i}"
+        end
         if not Vagrant.has_plugin?('vagrant-proxyconf')
           system 'vagrant plugin install vagrant-proxyconf'
           raise 'vagrant-proxyconf was installed but it requires to execute again'
         end
-        config.proxy.no_proxy = node[:ips].join(",") + "," + ENV['no_proxy']
+        config.proxy.no_proxy = node[:ips].join(",") + "," + $no_proxy
       end
 
         # Common Settings:
@@ -432,6 +441,7 @@ Vagrant.configure("2") do |config|
           lbox.nested = true
           lbox.cpu_mode = 'host-passthrough'
           lbox.cpus = node[:cpus]
+          lbox.management_network_address = "192.168.121.0/27"
 
           # Set Network
           nodeconfig.vm.network :private_network,
@@ -475,13 +485,8 @@ Vagrant.configure("2") do |config|
         end
 
         # Set Box type
-        if ["openstack", "oom"].include? node[:name]
-          box = {
-            :virtualbox => 'ubuntu/xenial64',
-            :libvirt => 'elastic/ubuntu-16.04-x86_64'
-          }
-        end
-        nodeconfig.vm.box = box[provider]
+        nodeconfig.vm.box =  box[provider][:name]
+        nodeconfig.vm.box_version = box[provider][:version]
 
         # Set Node name
         nodeconfig.vm.hostname = if node.has_key? :hostname then node[:hostname] else node[:name] end
