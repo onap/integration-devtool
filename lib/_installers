@@ -133,6 +133,15 @@ function _configure_docker_proxy {
     rm ${docker_conf_backup}
 }
 
+function _configure_docker_systemd_service {
+    local docker_service=/etc/systemd/system/docker.service.d
+
+    mkdir -p $docker_service
+    cp /var/onap/files/docker.conf $docker_service/docker.conf
+
+    systemctl daemon-reload
+}
+
 # _configure_docker_settings() - Configures Docker settings
 function _configure_docker_settings {
     local docker_conf=/etc/default/docker
@@ -148,6 +157,7 @@ function _configure_docker_settings {
         *suse)
         ;;
         ubuntu|debian)
+            _configure_docker_systemd_service
             service docker restart
             sleep 10
         ;;
